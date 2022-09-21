@@ -1,0 +1,350 @@
+type: vertical-stack
+cards:
+  - show_name: true
+    show_icon: false
+    type: button
+    tap_action:
+      action: none
+    hold_action:
+      action: none
+    name: SM METR
+  - type: conditional
+    conditions:
+      - entity: switch.metr_detail_sm_metr
+        state: 'off'
+      - entity: switch.setting_sm_metr
+        state: 'off'
+      - entity: switch.timing_sm_metr
+        state: 'off'
+    card:
+      type: vertical-stack
+      cards:
+        - type: horizontal-stack
+          cards:
+            - show_name: true
+              show_icon: true
+              type: button
+              tap_action:
+                action: none
+              entity: switch.metr_detail_sm_metr
+              icon_height: 25px
+              hold_action:
+                action: toggle
+              name: METR DETAIL
+              icon: mdi:form-select
+              show_state: false
+            - show_name: false
+              show_icon: true
+              show_state: true
+              type: glance
+              entities:
+                - entity: sensor.wifi_signal_sm_metr
+            - show_name: true
+              show_icon: true
+              type: button
+              tap_action:
+                action: none
+              entity: switch.total_sm_metr_reset
+              name: GENERAL RESET
+              icon_height: 25px
+              hold_action:
+                action: toggle
+        - type: entities
+          entities:
+            - entity: sensor.total_active_energy
+        - type: gauge
+          entity: sensor.total_active_power
+          min: 0
+          max: 20
+          needle: true
+          severity:
+            green: 1
+            yellow: 10
+            red: 13
+        - type: horizontal-stack
+          cards:
+            - show_name: true
+              show_icon: true
+              type: button
+              tap_action:
+                action: none
+              entity: switch.power_sm_metr
+              name: ON/OFF
+              icon_height: 25px
+              hold_action:
+                action: toggle
+            - show_name: true
+              show_icon: true
+              type: button
+              tap_action:
+                action: none
+              entity: switch.reset_sm_metr
+              name: RESET
+              hold_action:
+                action: toggle
+              icon_height: 25px
+            - type: vertical-stack
+              cards:
+                - type: conditional
+                  conditions:
+                    - entity: binary_sensor.timing_info
+                      state: 'on'
+                  card:
+                    show_name: false
+                    show_icon: true
+                    show_state: false
+                    type: glance
+                    entities:
+                      - entity: switch.time_on_off
+                - show_name: true
+                  show_icon: true
+                  type: button
+                  tap_action:
+                    action: none
+                  entity: switch.timing_sm_metr
+                  name: TIMING
+                  icon_height: 25px
+                  hold_action:
+                    action: toggle
+            - type: vertical-stack
+              cards:
+                - type: conditional
+                  conditions:
+                    - entity: switch.prepayment_fuction
+                      state: 'on'
+                  card:
+                    show_name: false
+                    show_icon: true
+                    show_state: false
+                    type: glance
+                    entities:
+                      - entity: switch.prepayment_fuction
+                    columns: 1
+                - show_name: true
+                  show_icon: true
+                  type: button
+                  tap_action:
+                    action: none
+                  entity: switch.setting_sm_metr
+                  name: SETTING
+                  icon_height: 25px
+                  hold_action:
+                    action: toggle
+  - type: conditional
+    conditions:
+      - entity: switch.metr_detail_sm_metr
+        state: 'on'
+    card:
+      type: vertical-stack
+      cards:
+        - show_name: true
+          show_icon: true
+          type: button
+          tap_action:
+            action: none
+          entity: switch.metr_detail_sm_metr
+          name: METR DETAIL
+          icon_height: 25px
+          hold_action:
+            action: toggle
+        - type: entities
+          entities:
+            - entity: sensor.import_active_energy
+            - entity: sensor.export_active_energy
+            - entity: sensor.contract_active_energy
+            - entity: sensor.frequency
+        - show_name: true
+          show_icon: false
+          type: button
+          tap_action:
+            action: none
+          name: A phase
+          hold_action:
+            action: none
+        - type: entities
+          entities:
+            - entity: sensor.rms_voltage_phase_a
+            - entity: sensor.rms_current_phase_a
+            - entity: sensor.rms_active_power_phase_a
+            - entity: sensor.rms_reactive_power_phase_a
+            - entity: sensor.rms_power_factor_phase_a
+        - show_name: true
+          show_icon: false
+          type: button
+          tap_action:
+            action: none
+          name: B phase
+          hold_action:
+            action: none
+        - type: entities
+          entities:
+            - entity: sensor.rms_voltage_phase_b
+            - entity: sensor.rms_current_phase_b
+            - entity: sensor.rms_active_power_phase_b
+            - entity: sensor.rms_reactive_power_phase_b
+            - entity: sensor.rms_power_factor_phase_b
+        - show_name: true
+          show_icon: false
+          type: button
+          tap_action:
+            action: none
+          name: C phase
+          hold_action:
+            action: none
+        - type: entities
+          entities:
+            - entity: sensor.rms_voltage_phase_c
+            - entity: sensor.rms_current_phase_c
+            - entity: sensor.rms_active_power_phase_c
+            - entity: sensor.rms_reactive_power_phase_c
+            - entity: sensor.rms_power_factor_phase_c
+        - show_name: true
+          show_icon: false
+          type: button
+          tap_action:
+            action: none
+          name: Group
+          hold_action:
+            action: none
+        - type: entities
+          entities:
+            - entity: sensor.rms_active_power_group
+            - entity: sensor.rms_reactive_power_group
+            - entity: sensor.rms_power_factor_group
+  - type: conditional
+    conditions:
+      - entity: switch.timing_sm_metr
+        state: 'on'
+    card:
+      type: vertical-stack
+      cards:
+        - show_name: true
+          show_icon: true
+          type: button
+          tap_action:
+            action: none
+          entity: switch.timing_sm_metr
+          name: TIMING
+          icon_height: 25px
+          hold_action:
+            action: toggle
+        - type: entities
+          entities:
+            - entity: number.day_of_week
+        - type: entities
+          entities:
+            - entity: number.data_time_h
+            - entity: number.data_time_m
+        - type: entities
+          entities:
+            - entity: switch.time_on_off
+          state_color: true
+        - type: conditional
+          conditions:
+            - entity: binary_sensor.timing_info
+              state: 'on'
+          card:
+            type: vertical-stack
+            cards:
+              - show_name: true
+                show_icon: false
+                type: button
+                tap_action:
+                  action: none
+                entity: switch.sonoff_100129e372_4
+                name: >-
+                  on the  -  “day of the week” after “hours” and “minute”  off /
+                  on.
+                hold_action:
+                  action: none
+              - type: horizontal-stack
+                cards:
+                  - type: conditional
+                    conditions:
+                      - entity: sensor.week
+                        state_not: 'No'
+                    card:
+                      type: glance
+                      entities:
+                        - entity: sensor.week
+                  - show_name: true
+                    show_icon: true
+                    show_state: true
+                    type: glance
+                    entities:
+                      - entity: sensor.hour
+                      - entity: sensor.minute
+                      - entity: sensor.on_off_timing
+        - type: horizontal-stack
+          cards:
+            - show_name: true
+              show_icon: true
+              type: button
+              tap_action:
+                action: none
+              entity: switch.save_timing
+              name: SAVE
+              hold_action:
+                action: toggle
+              icon_height: 25px
+            - show_name: true
+              show_icon: true
+              type: button
+              tap_action:
+                action: none
+              entity: switch.reset_data_timing
+              name: RESET
+              icon_height: 25px
+              hold_action:
+                action: toggle
+  - type: conditional
+    conditions:
+      - entity: switch.setting_sm_metr
+        state: 'on'
+    card:
+      type: vertical-stack
+      cards:
+        - show_name: true
+          show_icon: true
+          type: button
+          tap_action:
+            action: none
+          entity: switch.setting_sm_metr
+          name: SETTING
+          icon_height: 25px
+          hold_action:
+            action: toggle
+        - type: entities
+          entities:
+            - entity: number.voltage_high_limit_input
+            - entity: number.voltage_low_limit_input
+            - entity: number.current_high_limit_input
+            - entity: number.staring_kwh_value_of_metr_input
+            - entity: number.metr_price_input
+        - show_name: true
+          show_icon: true
+          type: button
+          tap_action:
+            action: none
+          entity: switch.save_protec_price_energy_initial
+          name: SAVE
+          icon_height: 25px
+          hold_action:
+            action: toggle
+        - type: entities
+          entities:
+            - entity: sensor.purchase_value
+            - entity: number.purchase_kwh
+            - entity: sensor.seiting_balance_kwh
+            - entity: number.seiting_balance_alarm_kwh
+            - entity: switch.prepayment_fuction
+        - show_name: true
+          show_icon: true
+          type: button
+          tap_action:
+            action: none
+          entity: switch.save_prepayment
+          icon_height: 25px
+          hold_action:
+            action: toggle
+          name: SAVE

@@ -1,0 +1,30 @@
+﻿electric meter DTS-238-7 WISEN integration homeassistant
+
+protocol: http://docs.hekr.me/protocol/
+
+интеграция трёхфазного электрического счётчика  DTS-238-7 (приложение WISEN, протокол hekr) в homeassistant через дополнение ESPhome.
+integration of a three-phase electric meter DTS-238-7 (WISEN application, hekr protocol) into a homeassistant via the ESPhome add-on.
+
+1. Разбираем счётчик и выпаиваем модуль ESP.
+   We disassemble the counter and unsolder the ESP module.
+
+2. Подключаем ESP к програматору
+   Connecting the ESP to the programmer
+
+3. Копируем папку sm_metr.h в homeassistant /config/esphome/
+   Copying a folder sm_metr.h в homeassistant /config/esphome/
+
+4. Запускаем дополнение ESPhome и создаём файл конфигурации с помощью мастера и в переносим в созданный файл smmetr_api.yml или smmetr_mqtt.yml.
+   We launch the ESPhome add-on and create a configuration file using the wizard and transfer it to the created file, smmetr_api.yml or smmetr_mqtt.yml file.
+
+5. Компилируем и записываем в ESP.
+   Compiling and writing to ESP.
+
+6. Паяем ESP на место и включаем.
+   We solder the ESP in place and turn on the counter.
+
+Файл lovles_smmetr.yml для панели визуализации.
+The lovles_smmetr.yml file for the visualization panel.
+
+Верхняя кнопка на счётчике это GENERAL REZET (удержание 5s.) 
+The top button on the counter is GENERAL REZET (hold 5s.)
