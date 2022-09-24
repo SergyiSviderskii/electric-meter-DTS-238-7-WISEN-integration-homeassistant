@@ -21,3 +21,4 @@ integration of a three-phase electric meter DTS-238-7 (WISEN application, hekr p
 The lovles_smmetr.yml file for the visualization panel.
 
 The top button on the counter is GENERAL REZET (hold 5s.)
+![IMG_1552](https://user-images.githubusercontent.com/70329544/192113313-cfc75a73-1600-476d-8462-dc1f39a91908.jpg)
