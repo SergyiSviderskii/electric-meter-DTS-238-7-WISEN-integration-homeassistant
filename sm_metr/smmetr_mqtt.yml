@@ -6,9 +6,7 @@ esphome:
 
 esp8266:
   board: esp01_1m
-  restore_from_flash: true
-  
-  
+  restore_from_flash: True
   
 wifi:
   ssid: !secret wifi_ssid
@@ -34,21 +32,22 @@ mqtt:
     topic: smmetr/debug
     qos: 0
     retain: false
-
-# Enable Home Assistant API
-#api: 
+  
+  # Enable Home Assistant API
+  #api:  
 
 ota:
-
+  
 logger:
   level: NONE
   hardware_uart: UART1
-  
+  esp8266_store_log_strings_in_flash: false
+    
 uart:
 - tx_pin: 1
   rx_pin: 3
   baud_rate: 9600
-  id: uart_bus 
+  id: uart_bus  
     
 time:
 - platform: sntp
@@ -61,9 +60,9 @@ time:
         - lambda: |-
             id(smtime).publish_state(true);
   on_time_sync:
-    then:
-      - lambda: |-
-          id(smtime).publish_state(true);
+    - then:
+        - lambda: |-
+            id(smtime).publish_state(true);
             
 globals:
 - id: my_global_float_staringkWh
@@ -114,6 +113,7 @@ binary_sensor:
 - platform: template
   id: smtime
   internal: true
+  retain: false
   
 switch:
 - platform: custom
@@ -145,12 +145,12 @@ switch:
 
   switches:
     - name: "Metr detail sm metr" 
-      icon: mdi:form-select
+      icon: mdi:form-select 
       retain: false
     - name: "Total sm metr reset"
       id: total_reset
       icon: mdi:tray-remove
-      retain: false
+      retain: false      
     - name: "Power sm metr"
       id: power
       icon: mdi:power-standby
@@ -161,7 +161,7 @@ switch:
       retain: false
     - name: "Timing sm metr"
       id: timing_sm
-      icon: mdi:clock-time-three
+      icon: mdi:clock-time-three 
       retain: false
     - name: "Save timing"
       id: save_timing
@@ -176,8 +176,8 @@ switch:
       retain: false
     - name: "Save protec. price energy initial"
       id: save_protect_price_energy_initial
-      icon: mdi:tray-arrow-up 
-      retain: false
+      icon: mdi:tray-arrow-up  
+      retain: false    
     - name: "Prepayment fuction"  
       id: prepayment_fuction_on_off
       retain: false
@@ -190,8 +190,8 @@ switch:
   name: "Time ON OFF"
   id: data_time_on_off
   assumed_state: true
-  optimistic: true  
-  retain: false
+  optimistic: true 
+  retain: false     
 
         
 sensor:
@@ -208,129 +208,160 @@ sensor:
   sensors:
   
   - name: "Import active energy"
+    device_class: energy
     unit_of_measurement: kWh
+    state_class: total
     icon: mdi:transmission-tower-import
-    accuracy_decimals: 2 
-    retain: false
+    accuracy_decimals: 2
+    retain: false  
   - name: "Export active energy"
+    device_class: energy
     unit_of_measurement: kWh
+    state_class: total
     icon: mdi:transmission-tower-export
     accuracy_decimals: 2
-    retain: false
+    retain: false  
   - name: "Contract active energy"
+    device_class: energy
     unit_of_measurement: kWh
-    icon: mdi:transmission-tower
+    state_class: total
     accuracy_decimals: 2
-    retain: false
+    retain: false    
   - name: "Frequency"
+    device_class: frequency 
     unit_of_measurement: Hz
-    icon: mdi:cosine-wave
-    accuracy_decimals: 2
-    retain: false
+    state_class: measurement 
+    accuracy_decimals: 2 
+    retain: false  
     
   - name: "RMS voltage phase a"
-    icon: mdi:sine-wave
+    device_class: voltage
     unit_of_measurement: V
+    state_class: measurement 
     accuracy_decimals: 1
-    retain: false
+    retain: false    
   - name: "RMS current phase a"
-    icon: mdi:current-ac
-    unit_of_measurement: A
+    device_class: current
+    unit_of_measurement: A    
+    state_class: measurement 
     accuracy_decimals: 3
-    retain: false
+    retain: false    
   - name: "RMS active power phase a"
-    icon: mdi:lightning-bolt-circle
-    unit_of_measurement: kW
-    accuracy_decimals: 4
-    retain: false
-  - name: "RMS reactive power phase a"
-    icon: mdi:tailwind 
-    unit_of_measurement: kVar
-    accuracy_decimals: 4
-    retain: false
-  - name: "RMS power factor phase a"
-    icon: mdi:pulse
-    accuracy_decimals: 3
-    retain: false
-    
-  - name: "RMS voltage phase b"
-    icon: mdi:sine-wave
-    unit_of_measurement: V
-    accuracy_decimals: 1
-    retain: false
-  - name: "RMS current phase b"
-    icon: mdi:current-ac
-    unit_of_measurement: A
-    accuracy_decimals: 3
-    retain: false
-  - name: "RMS active power phase b"
-    icon: mdi:lightning-bolt-circle
-    unit_of_measurement: kW
-    accuracy_decimals: 4
-    retain: false
-  - name: "RMS reactive power phase b"
-    icon: mdi:tailwind 
-    unit_of_measurement: kVar
+    device_class: power
+    unit_of_measurement: kW  
+    state_class: measurement  
     accuracy_decimals: 4 
-    retain: false
-  - name: "RMS power factor phase b"
-    icon: mdi:pulse
+    retain: false  
+  - name: "RMS reactive power phase a"
+    device_class: reactive_power
+    unit_of_measurement: var
+    state_class: measurement  
+    accuracy_decimals: 4
+    retain: false    
+  - name: "RMS power factor phase a"
+    device_class: power_factor
+    unit_of_measurement: "%"
+    state_class: measurement 
     accuracy_decimals: 3 
     retain: false
     
-  - name: "RMS voltage phase c"
-    icon: mdi:sine-wave
+  - name: "RMS voltage phase b"
+    device_class: voltage
     unit_of_measurement: V
+    state_class: measurement 
     accuracy_decimals: 1
-    retain: false
+    retain: false    
+  - name: "RMS current phase b"
+    device_class: current
+    unit_of_measurement: A    
+    state_class: measurement 
+    accuracy_decimals: 3
+    retain: false    
+  - name: "RMS active power phase b"
+    device_class: power
+    unit_of_measurement: kW  
+    state_class: measurement  
+    accuracy_decimals: 4
+    retain: false   
+  - name: "RMS reactive power phase b"
+    device_class: reactive_power
+    unit_of_measurement: var
+    state_class: measurement  
+    accuracy_decimals: 4
+    retain: false    
+  - name: "RMS power factor phase b"
+    device_class: power_factor
+    unit_of_measurement: "%"
+    state_class: measurement 
+    accuracy_decimals: 3
+    retain: false  
+    
+  - name: "RMS voltage phase c"
+    device_class: voltage
+    unit_of_measurement: V
+    state_class: measurement 
+    accuracy_decimals: 1
+    retain: false    
   - name: "RMS current phase c"
-    icon: mdi:current-ac
-    unit_of_measurement: A
-    accuracy_decimals: 3
-    retain: false
+    device_class: current
+    unit_of_measurement: A    
+    state_class: measurement 
+    accuracy_decimals: 3 
+    retain: false   
   - name: "RMS active power phase c"
-    icon: mdi:lightning-bolt-circle
-    unit_of_measurement: kW
-    accuracy_decimals: 4
-    retain: false
+    device_class: power
+    unit_of_measurement: kW  
+    state_class: measurement  
+    accuracy_decimals: 4  
+    retain: false 
   - name: "RMS reactive power phase c"
-    icon: mdi:tailwind 
-    unit_of_measurement: kVar
+    device_class: reactive_power
+    unit_of_measurement: var
+    state_class: measurement  
     accuracy_decimals: 4
-    retain: false
+    retain: false    
   - name: "RMS power factor phase c"
-    icon: mdi:pulse
-    accuracy_decimals: 3
-    retain: false
+    device_class: power_factor
+    unit_of_measurement: "%"
+    state_class: measurement 
+    accuracy_decimals: 3 
+    retain: false  
     
   - name: "RMS active power group"
-    icon: mdi:lightning-bolt-circle
-    unit_of_measurement: kW
+    device_class: power
+    unit_of_measurement: kW  
+    state_class: measurement 
     accuracy_decimals: 4
     retain: false
   - name: "RMS reactive power group"
-    icon: mdi:tailwind 
-    unit_of_measurement: kVar
-    accuracy_decimals: 4 
-    retain: false
+    device_class: reactive_power
+    unit_of_measurement: var
+    state_class: measurement 
+    accuracy_decimals: 4  
+    retain: false 
   - name: "RMS power factor group"
-    icon: mdi:pulse
+    device_class: power_factor
+    unit_of_measurement: "%"
+    state_class: measurement 
     accuracy_decimals: 3
     retain: false
 
 - platform: template    
   name: "Total active energy"
   id: total_active_energy
-  icon: mdi:home-lightning-bolt
+  device_class: energy
   unit_of_measurement: kWh
+  state_class: total
+  icon: mdi:home-lightning-bolt
   accuracy_decimals: 2    
   update_interval: 600s
   retain: false
 - platform: template    
   name: "Total active power"
   id: total_active_power
-  icon: mdi:lightning-bolt-outline
-  unit_of_measurement: kW
+  device_class: power
+  unit_of_measurement: kW  
+  state_class: measurement
   accuracy_decimals: 4      
   update_interval: 600s
   retain: false
@@ -370,7 +401,7 @@ sensor:
 - platform: wifi_signal
   name: "WiFi Signal SM Metr "
   update_interval: 600s
-  retain: false
+  retain: false    
 
 text_sensor:
 - platform: template
@@ -384,7 +415,7 @@ text_sensor:
   id: data_time_onoff 
   icon: mdi:power
   update_interval: 600s
-  retain: false
+  retain: false  
   
 number:
 - platform: template
@@ -394,8 +425,8 @@ number:
   optimistic: true
   min_value: 0
   max_value: 23
-  step: 1 
-  retain: false
+  step: 1
+  retain: false     
 - platform: template
   name: "Data time m"
   icon: mdi:clock-time-three
@@ -423,7 +454,7 @@ number:
   min_value: 240
   max_value: 275
   step: 1 
-  retain: false
+  retain: false 
 - platform: template
   name: "Voltage low limit input"
   icon: mdi:sine-wave
@@ -441,7 +472,7 @@ number:
   min_value: 10
   max_value: 100.00
   step: .01
-  retain: false
+  retain: false 
 - platform: template
   name: "Staring kWh value of metr input"
   icon: mdi:transmission-tower-import

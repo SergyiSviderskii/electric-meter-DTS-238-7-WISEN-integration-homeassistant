@@ -18,8 +18,6 @@ uint32_t last_sending_timestamp = 0;
 uint32_t last_rx_char_timestamp = 0; 
 uint32_t last_ind_led_timestamp = 0;
 
-float _total_active_power = 0;
-
 float _import_active_energy = 0;
 float _export_active_energy = 0;
 float _contract_active_energy = 0;
@@ -36,12 +34,12 @@ float _rms_current_phase_b = 0;
 float _rms_active_power_phase_b = 0;
 float _rms_reactive_power_phase_b = 0;
 float _rms_power_factor_phase_b = 0;
-    
+
 float _rms_voltage_phase_c = 0;
 float _rms_current_phase_c = 0;
 float _rms_active_power_phase_c = 0;
 float _rms_reactive_power_phase_c = 0;
-float _rms_power_factor_phase_c = 0; 
+float _rms_power_factor_phase_c = 0;; 
     
 float _rms_active_power_g = 0;
 float _rms_reactive_power_g = 0;
@@ -87,6 +85,7 @@ class MyCustomSwitch : public Component, public Switch {
         } else {
           read_cycle_number = 4;  
         }
+        frame_number_inp = 0;
         last_sending_timestamp = 0;
         this->state = !state;
       }      
@@ -159,9 +158,7 @@ class MyCustomSwitch : public Component, public Switch {
 class MyCustomSensor : public PollingComponent {
   public:
 
-    MyCustomSensor() : PollingComponent(60000) { }
- 
-    //Sensor *total_active_power = new Sensor();
+    MyCustomSensor() : PollingComponent(45000) { }
 
     Sensor *import_active_energy = new Sensor();
     Sensor *export_active_energy = new Sensor();
@@ -179,12 +176,12 @@ class MyCustomSensor : public PollingComponent {
     Sensor *rms_active_power_phase_b = new Sensor();
     Sensor *rms_reactive_power_phase_b = new Sensor();
     Sensor *rms_power_factor_phase_b = new Sensor();
-    
+
     Sensor *rms_voltage_phase_c = new Sensor();
     Sensor *rms_current_phase_c = new Sensor();
     Sensor *rms_active_power_phase_c = new Sensor();
     Sensor *rms_reactive_power_phase_c = new Sensor();
-    Sensor *rms_power_factor_phase_c = new Sensor(); 
+    Sensor *rms_power_factor_phase_c = new Sensor();    
     
     Sensor *rms_active_power_g = new Sensor();
     Sensor *rms_reactive_power_g = new Sensor();
@@ -196,8 +193,6 @@ class MyCustomSensor : public PollingComponent {
 
   void update() override {
   
-    //total_active_power->publish_state(_total_active_power);
-
     import_active_energy->publish_state(_import_active_energy);
     export_active_energy->publish_state(_export_active_energy);
     contract_active_energy->publish_state(_contract_active_energy);
@@ -216,10 +211,10 @@ class MyCustomSensor : public PollingComponent {
     rms_power_factor_phase_b->publish_state(_rms_power_factor_phase_b);
     
     rms_voltage_phase_c->publish_state(_rms_voltage_phase_c);
-    rms_current_phase_c->publish_state(_rms_voltage_phase_c);
+    rms_current_phase_c->publish_state(_rms_current_phase_c);
     rms_active_power_phase_c->publish_state(_rms_active_power_phase_c);
     rms_reactive_power_phase_c->publish_state(_rms_reactive_power_phase_c);
-    rms_power_factor_phase_c->publish_state(_rms_power_factor_phase_c); 
+    rms_power_factor_phase_c->publish_state(_rms_power_factor_phase_c);
     
     rms_active_power_g->publish_state(_rms_active_power_g);
     rms_reactive_power_g->publish_state(_rms_reactive_power_g);
@@ -498,7 +493,7 @@ class SMComponent : public Component, public UARTDevice {
         }
         break;
         case 12: {
-          auto time = id(homeassistant_time).now();
+          auto time = id(smmetr_time).now();
           time::ESPTime now = time;
           if (now.is_valid()) {
             uint8_t year = now.year - 2000;
@@ -637,9 +632,10 @@ class SMComponent : public Component, public UARTDevice {
         
           id(power).publish_state(buffer[6]);
           id(total_active_energy).publish_state(((buffer[7] << 24) | (buffer[8] << 16) | (buffer[9] << 8) | buffer[10]) * 0.01);
-          id(total_active_power).publish_state(((buffer[11] << 24) | (buffer[12] << 16) | (buffer[13] << 8) | buffer[14]) * 0.0001);
-          if (id(total_active_power).state >= 100 ) 
-            id(total_active_power).publish_state(100 - id(total_active_power).state);
+          float data = ((buffer[11] << 24) | (buffer[12] << 16) | (buffer[13] << 8) | buffer[14]) * 0.0001;
+          if (data >= 100 ) 
+             data = 100 - data;
+          id(total_active_power).publish_state(data);
             
           uint16_t data_data = (buffer[16] << 8) | buffer[17]; 
           id(data_time_hour).publish_state((int)data_data/60);

@@ -182,106 +182,137 @@ sensor:
   sensors:
   
   - name: "Import active energy"
+    device_class: energy
     unit_of_measurement: kWh
+    state_class: total
     icon: mdi:transmission-tower-import
     accuracy_decimals: 2  
   - name: "Export active energy"
+    device_class: energy
     unit_of_measurement: kWh
+    state_class: total
     icon: mdi:transmission-tower-export
-    accuracy_decimals: 2    
+    accuracy_decimals: 2  
   - name: "Contract active energy"
+    device_class: energy
     unit_of_measurement: kWh
-    icon: mdi:transmission-tower
+    state_class: total
     accuracy_decimals: 2    
   - name: "Frequency"
+    device_class: frequency 
     unit_of_measurement: Hz
-    icon: mdi:cosine-wave
+    state_class: measurement 
     accuracy_decimals: 2   
     
   - name: "RMS voltage phase a"
-    icon: mdi:sine-wave
+    device_class: voltage
     unit_of_measurement: V
+    state_class: measurement 
     accuracy_decimals: 1    
   - name: "RMS current phase a"
-    icon: mdi:current-ac
-    unit_of_measurement: A
+    device_class: current
+    unit_of_measurement: A    
+    state_class: measurement 
     accuracy_decimals: 3    
   - name: "RMS active power phase a"
-    icon: mdi:lightning-bolt-circle
-    unit_of_measurement: kW
+    device_class: power
+    unit_of_measurement: kW  
+    state_class: measurement  
     accuracy_decimals: 4   
   - name: "RMS reactive power phase a"
-    icon: mdi:tailwind 
-    unit_of_measurement: kVar
+    device_class: reactive_power
+    unit_of_measurement: var
+    state_class: measurement  
     accuracy_decimals: 4    
   - name: "RMS power factor phase a"
-    icon: mdi:pulse
+    device_class: power_factor
+    unit_of_measurement: "%"
+    state_class: measurement 
     accuracy_decimals: 3 
     
   - name: "RMS voltage phase b"
-    icon: mdi:sine-wave
+    device_class: voltage
     unit_of_measurement: V
-    accuracy_decimals: 1   
+    state_class: measurement 
+    accuracy_decimals: 1    
   - name: "RMS current phase b"
-    icon: mdi:current-ac
-    unit_of_measurement: A
-    accuracy_decimals: 3   
+    device_class: current
+    unit_of_measurement: A    
+    state_class: measurement 
+    accuracy_decimals: 3    
   - name: "RMS active power phase b"
-    icon: mdi:lightning-bolt-circle
-    unit_of_measurement: kW
-    accuracy_decimals: 4    
+    device_class: power
+    unit_of_measurement: kW  
+    state_class: measurement  
+    accuracy_decimals: 4   
   - name: "RMS reactive power phase b"
-    icon: mdi:tailwind 
-    unit_of_measurement: kVar
+    device_class: reactive_power
+    unit_of_measurement: var
+    state_class: measurement  
     accuracy_decimals: 4    
   - name: "RMS power factor phase b"
-    icon: mdi:pulse
+    device_class: power_factor
+    unit_of_measurement: "%"
+    state_class: measurement 
     accuracy_decimals: 3  
     
   - name: "RMS voltage phase c"
-    icon: mdi:sine-wave
+    device_class: voltage
     unit_of_measurement: V
-    accuracy_decimals: 1   
+    state_class: measurement 
+    accuracy_decimals: 1    
   - name: "RMS current phase c"
-    icon: mdi:current-ac
-    unit_of_measurement: A
+    device_class: current
+    unit_of_measurement: A    
+    state_class: measurement 
     accuracy_decimals: 3    
   - name: "RMS active power phase c"
-    icon: mdi:lightning-bolt-circle
-    unit_of_measurement: kW
+    device_class: power
+    unit_of_measurement: kW  
+    state_class: measurement  
     accuracy_decimals: 4   
   - name: "RMS reactive power phase c"
-    icon: mdi:tailwind 
-    unit_of_measurement: kVar
+    device_class: reactive_power
+    unit_of_measurement: var
+    state_class: measurement  
     accuracy_decimals: 4    
   - name: "RMS power factor phase c"
-    icon: mdi:pulse
-    accuracy_decimals: 3    
+    device_class: power_factor
+    unit_of_measurement: "%"
+    state_class: measurement 
+    accuracy_decimals: 3   
     
   - name: "RMS active power group"
-    icon: mdi:lightning-bolt-circle
-    unit_of_measurement: kW
+    device_class: power
+    unit_of_measurement: kW  
+    state_class: measurement 
     accuracy_decimals: 4
   - name: "RMS reactive power group"
-    icon: mdi:tailwind 
-    unit_of_measurement: kVar
+    device_class: reactive_power
+    unit_of_measurement: var
+    state_class: measurement 
     accuracy_decimals: 4   
   - name: "RMS power factor group"
-    icon: mdi:pulse
+    device_class: power_factor
+    unit_of_measurement: "%"
+    state_class: measurement 
     accuracy_decimals: 3
 
 - platform: template    
   name: "Total active energy"
   id: total_active_energy
-  icon: mdi:home-lightning-bolt
+  device_class: energy
   unit_of_measurement: kWh
+  state_class: total
+  icon: mdi:home-lightning-bolt
   accuracy_decimals: 2    
   update_interval: 600s
 - platform: template    
   name: "Total active power"
   id: total_active_power
-  icon: mdi:lightning-bolt-outline
-  unit_of_measurement: kW
+  device_class: power
+  unit_of_measurement: kW  
+  state_class: measurement
   accuracy_decimals: 4      
   update_interval: 600s
 - platform: template  
