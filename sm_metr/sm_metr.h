@@ -1,10 +1,8 @@
-#include "esphome.h"
-using namespace esphome;
 
 static const char *const TAG = "SM";
 static const int RECEIVE_TIMEOUT = 300;
 static const int FRAME_INTERVAL = 200;                     // Active device reporting rate (i.e. frame interval) > 200mc
-static const int SENDING_INTERVAL = 30000;                 // Settings reading cycles 
+static const int SENDING_INTERVAL = 5000;                 // Settings reading cycles 
 static const int IND_LED_INTERVAL = 100;
 
 struct SmFrame {
@@ -48,7 +46,7 @@ float _rms_power_factor_g = 0;
 float _voltage_high_limit = 0;
 float _voltage_low_limit = 0;
 float _current_high_limit = 0;
-float _staring_kWh_value_of_metr = 0;
+float _starting_kWh_value_of_metr = 0;
 float _metr_price = 0; 
 
 bool _prepayment_fuction_onoff = false;
@@ -158,7 +156,7 @@ class MyCustomSwitch : public Component, public Switch {
 class MyCustomSensor : public PollingComponent {
   public:
 
-    MyCustomSensor() : PollingComponent(45000) { }
+    MyCustomSensor() : PollingComponent(5000) { }
 
     Sensor *import_active_energy = new Sensor();
     Sensor *export_active_energy = new Sensor();
@@ -237,7 +235,7 @@ class SMComponent : public Component, public UARTDevice {
       while (this->available()) {
         uint8_t c;
         this->read_byte(&c);
-        if(read_cycle_number != 13) 
+        if(read_cycle_number != 13)
           this->handle_char_(c);
       }
       process_command_queue_();
@@ -318,10 +316,12 @@ class SMComponent : public Component, public UARTDevice {
         this->frame_number_ +=1;
         ESP_LOGE(TAG, "Sending an error frame to the device: TYPE=0xFF FRAME=[%s]", format_hex_pretty(rx_message_).c_str());
         this->send_source_frame_(SmFrame {.type_frame = 0xFF, .payload = {rx_message_}}); // code validation error
+        sending_interval_reg = 1000;
+        this->frame_number_ +=1;
         return false;  // return false to reset rx buffer                                                                                
       }                           
 
-      ESP_LOGI(TAG, "Received: TYPE=0x%02X FRAME=[%s]", type, format_hex_pretty(rx_message_).c_str());
+      //ESP_LOGI(TAG, "Received: TYPE=0x%02X FRAME=[%s]", type, format_hex_pretty(rx_message_).c_str());
       
       if (type == 0x02) {
         this->frame_number_ +=1;
@@ -329,14 +329,14 @@ class SMComponent : public Component, public UARTDevice {
         return false;   // return false to reset rx buffer
       }
       
-      this->send_source_frame_(SmFrame {.type_frame = 0x01, .payload = rx_message_});  
+      this->send_source_frame_(SmFrame {.type_frame = 0x01, .payload = rx_message_}); 
+      
       // valid message
       const uint8_t *message_data = data; 
+      this->handle_command_( type, message_data);
       
       // send input frame     
       if (type == 0x01) { 
-   
-        this->handle_command_( type, message_data);
         frame_number_inp +=1;
         if (frame_number_inp > 2 ) {
           sending_interval_reg = SENDING_INTERVAL;
@@ -366,14 +366,12 @@ class SMComponent : public Component, public UARTDevice {
         }        
       }
       
-
       if (now - last_rx_char_timestamp > RECEIVE_TIMEOUT) 
         this->rx_message_.clear();
       
       if (this->expected_response_.has_value() && delay > FRAME_INTERVAL) 
         this->expected_response_.reset(); 
-      
-         
+     
       if (!this->command_queue_.empty() &&  !this->expected_response_.has_value()){ 
         this->send_frame_(command_queue_.front());
         this->command_queue_.erase(command_queue_.begin());
@@ -390,7 +388,6 @@ class SMComponent : public Component, public UARTDevice {
         last_sending_timestamp = millis();
         this->settings_reading_cycles_ (); 
       } 
-      
     }
     
     // Preparation of settings reading cycles SMMetr
@@ -410,11 +407,6 @@ class SMComponent : public Component, public UARTDevice {
         break;
         // frame call - total active (power on/off, power, energy) and timing
         case 2: {
-          this->send_source_frame_(SmFrame {.type_frame = 0x02, .payload = {0x48, 0x06, 0x02, this->frame_number_, 0x00, (uint8_t)(0x50 + this->frame_number_)}});
-        }  
-        break;
-        // frame call - total active (power on/off, power, energy) and timing
-        case 3: {
           this->send_source_frame_(SmFrame {.type_frame = 0x02, .payload = {0x48, 0x06, 0x02, this->frame_number_, 0x00, (uint8_t)(0x50 + this->frame_number_)}});
         }  
         break;
@@ -442,7 +434,7 @@ class SMComponent : public Component, public UARTDevice {
           uint8_t voltage_high_limit_input_ = (uint16_t)id(voltage_high_limit).state >> 8;
           uint8_t voltage_high_limit_input__ = (uint8_t)id(voltage_high_limit).state;
           uint8_t voltage_low_limit_input__ = (uint8_t)id(voltage_low_limit).state;
-          id(my_global_float_staringkWh) = id(staring_kWh_value_of_metr).state;
+          id(my_global_float_startingkWh) = id(starting_kWh_value_of_metr).state;
           id(my_global_float_pricekWh) = id(metr_price).state;
 
           this->send_source_frame_(SmFrame {.type_frame = 0x02, .payload = {0x48, 0x0C, 0x02, this->frame_number_, 0x03, 
@@ -460,18 +452,18 @@ class SMComponent : public Component, public UARTDevice {
           uint8_t purchase_kWh___ = (uint32_t)data >> 8;
           uint8_t purchase_kWh____ = (uint32_t)data;          
           
-          data =id(prepayment_purchases_seiting_balance_alarm_kWh).state * 100;
-          uint8_t seiting_balance_alarm_kWh_ = (uint32_t)data >> 24;
-          uint8_t seiting_balance_alarm_kWh__ = (uint32_t)data >> 16;
-          uint8_t seiting_balance_alarm_kWh___ = (uint32_t)data >> 8;
-          uint8_t seiting_balance_alarm_kWh____ = (uint32_t)data;        
+          data =id(prepayment_purchases_setting_balance_alarm_kWh).state * 100;
+          uint8_t setting_balance_alarm_kWh_ = (uint32_t)data >> 24;
+          uint8_t setting_balance_alarm_kWh__ = (uint32_t)data >> 16;
+          uint8_t setting_balance_alarm_kWh___ = (uint32_t)data >> 8;
+          uint8_t setting_balance_alarm_kWh____ = (uint32_t)data;        
                    
           
           this->send_source_frame_ (SmFrame {.type_frame = 0x02, .payload = {0x48, 0x0F, 0x02, this->frame_number_, 0x0D, 
           purchase_kWh_, purchase_kWh__, purchase_kWh___, purchase_kWh____,
-          seiting_balance_alarm_kWh_, seiting_balance_alarm_kWh__, seiting_balance_alarm_kWh___, seiting_balance_alarm_kWh____, _prepayment_fuction_onoff,  
+          setting_balance_alarm_kWh_, setting_balance_alarm_kWh__, setting_balance_alarm_kWh___, setting_balance_alarm_kWh____, _prepayment_fuction_onoff,  
           (uint8_t)(0x48+0x0F+0x02+this->frame_number_+0x0D+purchase_kWh_+purchase_kWh__+purchase_kWh___+purchase_kWh____+
-          seiting_balance_alarm_kWh_+seiting_balance_alarm_kWh__+seiting_balance_alarm_kWh___+seiting_balance_alarm_kWh____+_prepayment_fuction_onoff)}});
+          setting_balance_alarm_kWh_+setting_balance_alarm_kWh__+setting_balance_alarm_kWh___+setting_balance_alarm_kWh____+_prepayment_fuction_onoff)}});
 
           sending_interval_reg = 5000;
         }
@@ -543,20 +535,20 @@ class SMComponent : public Component, public UARTDevice {
                 this->send_source_frame_(SmFrame {.type_frame = 0xFE, .payload = {0x48, 0x0D, 0xFE, 0x01, 0x40, year, month, day_of_month, hour, minute, second, day_of_week, 
                 (uint8_t)(0x94+year+month+day_of_month+hour+minute+second+day_of_week)}});
                 read_cycle_number = 0;
+                frame_number_inp = 0;
                 sending_interval_reg = 1000;
               }
             }  
           } else {
             timing = false;
             id(save_timing).publish_state(false);
-            read_cycle_number = 0;
+            read_cycle_number = 1;
             sending_interval_reg = 1000;
           }
         } 
         break;
         case 13: {
-          read_cycle_number = 0;
-          sending_interval_reg = 0;
+          id(smtime).publish_state(true);
         }
         break;
         default:{
@@ -568,6 +560,7 @@ class SMComponent : public Component, public UARTDevice {
       }  
     }
 
+
     // Detailed layout received frame 
     void handle_command_(uint8_t type, const uint8_t *buffer) {
 
@@ -577,7 +570,7 @@ class SMComponent : public Component, public UARTDevice {
         case 0x0B: {
           _import_active_energy = ((buffer[58] << 24) | (buffer[59] << 16) | (buffer[60] << 8) | buffer[61]) * 0.01;
           _export_active_energy = ((buffer[62] << 24) | (buffer[63] << 16) | (buffer[64] << 8) | buffer[65]) * -0.01;
-          _contract_active_energy = (((buffer[54] << 24) | (buffer[55] << 16) | (buffer[56] << 8) | buffer[57]) * 0.01) + id(my_global_float_staringkWh);
+          _contract_active_energy = (((buffer[54] << 24) | (buffer[55] << 16) | (buffer[56] << 8) | buffer[57]) * 0.01) + id(my_global_float_startingkWh);
           _frequency = ((buffer[52] << 8) | buffer[53]) * 0.01;
             
           _rms_voltage_phase_a = ((buffer[14] << 8) | buffer[15]) * 0.1;
@@ -636,36 +629,36 @@ class SMComponent : public Component, public UARTDevice {
           if (data >= 100 ) 
              data = 100 - data;
           id(total_active_power).publish_state(data);
-            
-          uint16_t data_data = (buffer[16] << 8) | buffer[17]; 
-          id(data_time_hour).publish_state((int)data_data/60);
-          id(data_time_minute).publish_state(((float)data_data/60 - (int)data_data/60) * 60); 
-          id(data_time_on_off).publish_state(buffer[18]);
           
-          if(id(day_week).state == 0)
-            id(data_time_week).publish_state("No");
-          if(id(day_week).state == 1)
-            id(data_time_week).publish_state("Mo");          
-          if(id(day_week).state == 2)
-            id(data_time_week).publish_state("Tu");
-          if(id(day_week).state == 3)
-            id(data_time_week).publish_state("We");
-          if(id(day_week).state == 4)
-            id(data_time_week).publish_state("Th");
-          if(id(day_week).state == 5)
-            id(data_time_week).publish_state("Fr");
-          if(id(day_week).state == 6)
-            id(data_time_week).publish_state("Sa");
-          if(id(day_week).state == 7)
-            id(data_time_week).publish_state("Su");
+          data = 0;
+          if (id(timing_sm).state || id(timing_info).state) {  
+            data = (buffer[16] << 8) | buffer[17]; 
+            id(data_time_hour).publish_state((int)data/60);
+            id(data_time_minute).publish_state(((float)data/60 - (int)data/60) * 60); 
+            id(data_time_on_off).publish_state(buffer[18]);
+          
+            if(id(day_week).state == 0)
+              id(data_time_week).publish_state("No");
+            if(id(day_week).state == 1)
+              id(data_time_week).publish_state("Mo");          
+            if(id(day_week).state == 2)
+              id(data_time_week).publish_state("Tu");
+            if(id(day_week).state == 3)
+              id(data_time_week).publish_state("We");
+            if(id(day_week).state == 4)
+              id(data_time_week).publish_state("Th");
+            if(id(day_week).state == 5)
+              id(data_time_week).publish_state("Fr");
+            if(id(day_week).state == 6)
+              id(data_time_week).publish_state("Sa");
+            if(id(day_week).state == 7)
+              id(data_time_week).publish_state("Su");
+          }      
   
           if (id(reset_timing).state)   
             id(reset_timing).publish_state(false);    
-          
-          if (id(reset).state)
-            id(reset).publish_state(false);
       
-          if (data_data == 0) {
+          if (data == 0) {
             id(timing_info).publish_state(false);
           } else {   
             id(timing_info).publish_state(true);
@@ -691,6 +684,9 @@ class SMComponent : public Component, public UARTDevice {
             
           if (id(save_prepayment).state) 
             id(save_prepayment).publish_state(false);  
+            
+          if (id(reset).state)
+            id(reset).publish_state(false);
 
           if (read_cycle_number == 11) {
             read_cycle_number = 5;
@@ -699,9 +695,9 @@ class SMComponent : public Component, public UARTDevice {
               id(total_reset).publish_state(false);
               id(status_gpio14).turn_on();
             }  
-            read_cycle_number += 1;
-            if (read_cycle_number > 3)  
-              read_cycle_number = 1; 
+            //read_cycle_number += 1;
+            //if (read_cycle_number > 2)  
+            read_cycle_number = 1; 
           }    
         }
       
@@ -712,13 +708,13 @@ class SMComponent : public Component, public UARTDevice {
           id(voltage_high_limit).publish_state(((buffer[5] << 8) | buffer[6]));
           id(voltage_low_limit).publish_state((buffer[7] << 8) | buffer[8]);
           id(current_high_limit).publish_state(((buffer[9] << 8) | buffer[10]) * 0.01); 
-          id(staring_kWh_value_of_metr).publish_state(id(my_global_float_staringkWh));
+          id(starting_kWh_value_of_metr).publish_state(id(my_global_float_startingkWh));
           id(metr_price).publish_state(id(my_global_float_pricekWh));        
 
           id(prepayment_purchase_kWh).publish_state(((buffer[11] << 24) | (buffer[12] << 16) | (buffer[13] << 8) | buffer[14]) * 0.01);
-          id(prepayment_purchases_seiting_balance_kWh).publish_state(((buffer[15] << 24) | (buffer[16] << 16) | (buffer[17] << 8) | buffer[18]) * 0.01);
-          id(prepayment_purchases_seiting_balance_alarm_kWh).publish_state(((buffer[19] << 24) | (buffer[20] << 16) | (buffer[21] << 8) | buffer[22]) * 0.01);
-          id(prepayment_purchase_value).publish_state(id(prepayment_purchases_seiting_balance_kWh).state * id(my_global_float_pricekWh));
+          id(prepayment_purchases_setting_balance_kWh).publish_state(((buffer[15] << 24) | (buffer[16] << 16) | (buffer[17] << 8) | buffer[18]) * 0.01);
+          id(prepayment_purchases_setting_balance_alarm_kWh).publish_state(((buffer[19] << 24) | (buffer[20] << 16) | (buffer[21] << 8) | buffer[22]) * 0.01);
+          id(prepayment_purchase_value).publish_state(id(prepayment_purchases_setting_balance_kWh).state * id(my_global_float_pricekWh));
           id(prepayment_fuction_on_off).publish_state(buffer[23]);
           
           if (read_cycle_number == 9 || read_cycle_number == 10) {
@@ -743,7 +739,7 @@ class SMComponent : public Component, public UARTDevice {
     
     // Frame transmission
     void send_frame_(SmFrame frame) { 
-      ESP_LOGI(TAG, "Sending: TYPE=0x%02X FRAME=[%s]", frame.type_frame, format_hex_pretty(frame.payload).c_str());
+      //ESP_LOGI(TAG, "Sending: TYPE=0x%02X FRAME=[%s]", frame.type_frame, format_hex_pretty(frame.payload).c_str());
       this->write_array(frame.payload.data(), frame.payload.size());
       this->expected_response_ =  frame.type_frame;
       last_command_timestamp = millis();
@@ -751,4 +747,4 @@ class SMComponent : public Component, public UARTDevice {
     
 };
 
- // ESP_LOGE(TAG, "%02X", data_data );
+ // ESP_LOGE(TAG, "%02X", data );
