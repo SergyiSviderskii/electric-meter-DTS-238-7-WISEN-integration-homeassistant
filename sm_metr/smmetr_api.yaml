@@ -1,0 +1,686 @@
+  substitutions:
+    hostname: "smmetr"
+    device_verbose_name: "sm_metr"  
+    key_api: " "
+    password_ota: " "   
+    wifi_use_address: 192.168.10.36
+
+# electric meter DTS-238-7 WISEN integration homeassistant  
+  esphome:
+    name: "$hostname"
+    name_add_mac_suffix: true
+    includes:
+      - sm_metr.h
+  
+  esp8266:
+    board: esp01_1m
+    restore_from_flash: true
+
+  logger:
+    #level: NONE
+    #level: VERBOSE 
+    baud_rate: 0 
+    esp8266_store_log_strings_in_flash: false   
+   
+# Enable Home Assistant API
+  api:
+    encryption:
+      key: "$key_api"
+
+  ota:
+    password: "$password_ota"  
+  
+  wifi:
+    ssid: !secret wifi_ssid
+    password: !secret wifi_password
+    fast_connect: true
+    use_address: $wifi_use_address
+
+
+# Enable fallback hotspot (captive portal) in case wifi connection fails
+#ap:
+    
+#captive_portal:
+  
+#web_server:
+ #port: 80     
+    
+  uart:
+  - tx_pin: 1
+    rx_pin: 3
+    baud_rate: 9600
+    id: uart_bus 
+      
+  time:
+  - platform: homeassistant
+    id: homeassistant_time    
+    on_time:
+      - seconds: 0
+        minutes: /30
+        then:
+          - lambda: |-
+              smtime = true;
+    on_time_sync:
+      then: 
+        - lambda: |-   
+            smtime = true;              
+              
+  globals:
+  - id: my_global_float_startingkWh
+    type: float
+    restore_value: true
+  - id: my_global_float_pricekWh
+    type: float
+    restore_value: true
+    
+  output:
+  - platform: gpio
+    pin: GPIO14
+    id: status_gpio14 
+    inverted: true 
+   
+  binary_sensor:
+  - platform: status
+    name: "${device_verbose_name}_status"
+    id: sm_metr_satatus
+    on_press:
+      then:
+        - output.turn_on: status_gpio14
+    internal: true
+  
+  - platform: gpio
+    id: sm_metr_total_reset_gpio
+    pin:
+      number: GPIO13
+      mode:
+        input: true
+        pullup: true
+    on_release:
+      then:
+        - lambda: |-
+            id(sm_metr_total_reset).turn_on();
+    filters:
+      - delayed_off: 5s
+    internal: true     
+    
+  switch:
+  - platform: custom
+    lambda: |-
+      auto sm_metr_detail = new MyCustomSwitch(0);
+      App.register_component(sm_metr_detail);
+      auto sm_metr_total_reset = new MyCustomSwitch(1);
+      App.register_component(sm_metr_total_reset);
+      auto sm_metr_power = new MyCustomSwitch(2);
+      App.register_component(sm_metr_power);
+      auto sm_metr_reset = new MyCustomSwitch(3);
+      App.register_component(sm_metr_reset); 
+      auto sm_metr_timing = new MyCustomSwitch(4);
+      App.register_component(sm_metr_timing);
+      auto sm_metr_save_timing = new MyCustomSwitch(5);
+      App.register_component(sm_metr_save_timing);
+      auto sm_metr_reset_timing = new MyCustomSwitch(6);
+      App.register_component(sm_metr_reset_timing);
+      auto sm_metr_setting = new MyCustomSwitch(7);
+      App.register_component(sm_metr_setting);
+      auto sm_metr_save_protec_price_energy_initial = new MyCustomSwitch(8);
+      App.register_component(sm_metr_save_protec_price_energy_initial);    
+      auto sm_metr_prepayment_fuction = new MyCustomSwitch(9);
+      App.register_component(sm_metr_prepayment_fuction); 
+      auto sm_metr_save_prepayment = new MyCustomSwitch(10);
+      App.register_component(sm_metr_save_prepayment);  
+      auto sm_metr_lock = new MyCustomSwitch(11);
+      App.register_component(sm_metr_lock);       
+      return {sm_metr_detail, sm_metr_total_reset, sm_metr_power, sm_metr_reset, sm_metr_timing, sm_metr_save_timing, sm_metr_reset_timing, 
+      sm_metr_setting, sm_metr_save_protec_price_energy_initial, sm_metr_prepayment_fuction, sm_metr_save_prepayment, sm_metr_lock}; 
+  
+    switches:
+      - name: "${device_verbose_name}_detail" 
+        id: sm_metr_detail
+        icon: mdi:form-select 
+      - name: "${device_verbose_name}_total_reset"
+        id: sm_metr_total_reset
+        icon: mdi:tray-remove      
+      - name: "${device_verbose_name}_power"
+        id: sm_metr_power
+        icon: mdi:power-standby
+      - name: "${device_verbose_name}_reset"
+        id: sm_metr_reset
+        icon: mdi:tray-remove
+      - name: "${device_verbose_name}_timing"
+        id: sm_metr_timing
+        icon: mdi:clock-time-three 
+      - name: "${device_verbose_name}_save_timing"
+        id: sm_metr_save_timing
+        icon: mdi:tray-arrow-up 
+      - name: "${device_verbose_name}_reset_timing"
+        id: sm_metr_reset_timing
+        icon: mdi:tray-remove
+      - name: "${device_verbose_name}_setting" 
+        id: sm_metr_setting
+        icon: mdi:cog-refresh
+      - name: "${device_verbose_name}_save_protec_price_energy_initial"
+        id: sm_metr_save_protec_price_energy_initial
+        icon: mdi:tray-arrow-up      
+      - name: "${device_verbose_name}_prepayment_fuction"  
+        id: sm_metr_prepayment_fuction
+      - name: "${device_verbose_name}_save_prepayment"
+        id: sm_metr_save_prepayment
+        icon: mdi:tray-arrow-up
+      - name: "${device_verbose_name}_lock"
+        id: sm_metr_lock
+        icon: mdi:lock         
+        
+  - platform: template
+    name: "${device_verbose_name}_timing_on_off"
+    id: sm_metr_timing_on_off
+    icon: mdi:power-standby
+    assumed_state: true
+    optimistic: true 
+    turn_on_action:
+      - lambda: |-
+            if (!reception.has_value()) {
+              sending.length_frame = 0x16;  
+              sending.valueapi = true;
+              sending_switch = sending;
+              id(sm_metr_save_timing).publish_state(true);
+              last_lock =  millis();
+            } 
+    turn_off_action:
+      - lambda: |-
+            if (!reception.has_value()) {
+              sending.length_frame = 0x16;  
+              sending.valueapi = true;
+              sending_switch = sending;
+              id(sm_metr_save_timing).publish_state(true);
+              last_lock =  millis();
+            } 
+
+  - platform: safe_mode
+    name: "${device_verbose_name}_restart_safe_mode"
+
+#  - platform: restart
+#    name: "${device_verbose_name}_restart"            
+  
+          
+  sensor:
+  - platform: template
+    name: "Import active energy"
+    id: import_active_energy
+    device_class: energy
+    unit_of_measurement: kWh
+    state_class: total
+    icon: mdi:transmission-tower-import
+    accuracy_decimals: 2 
+    update_interval: never
+  - platform: template    
+    name: "Export active energy"
+    id: export_active_energy
+    device_class: energy
+    unit_of_measurement: kWh
+    state_class: total
+    icon: mdi:transmission-tower-export
+    accuracy_decimals: 2
+    update_interval: never
+  - platform: template    
+    name: "Contract active energy"
+    id: contract_active_energy
+    device_class: energy
+    unit_of_measurement: kWh
+    state_class: total
+    accuracy_decimals: 2 
+    update_interval: never
+  - platform: template     
+    name: "Frequency"
+    id: frequency
+    device_class: frequency 
+    unit_of_measurement: Hz
+    state_class: measurement 
+    accuracy_decimals: 2 
+    update_interval: never
+   
+  - platform: template   
+    name: "RMS voltage phase a"
+    id: rms_voltage_phase_a
+    device_class: voltage
+    unit_of_measurement: V
+    state_class: measurement 
+    accuracy_decimals: 1 
+    update_interval: never
+  - platform: template    
+    name: "RMS current phase a"
+    id: rms_current_phase_a
+    device_class: current
+    unit_of_measurement: A    
+    state_class: measurement 
+    accuracy_decimals: 3 
+    update_interval: never
+  - platform: template    
+    name: "RMS active power phase a"
+    id: rms_active_power_phase_a
+    device_class: power
+    unit_of_measurement: kW  
+    state_class: measurement  
+    accuracy_decimals: 4 
+    update_interval: never
+  - platform: template    
+    name: "RMS reactive power phase a"
+    id: rms_reactive_power_phase_a
+    device_class: reactive_power
+    unit_of_measurement: kvar
+    state_class: measurement  
+    accuracy_decimals: 4
+    update_interval: never
+  - platform: template    
+    name: "RMS power factor phase a"
+    id: rms_power_factor_phase_a
+    device_class: power_factor
+    unit_of_measurement: "%"
+    state_class: measurement 
+    accuracy_decimals: 3 
+    update_interval: never
+    
+  - platform: template   
+    name: "RMS voltage phase b"
+    id: rms_voltage_phase_b
+    device_class: voltage
+    unit_of_measurement: V
+    state_class: measurement 
+    accuracy_decimals: 1 
+    update_interval: never
+  - platform: template    
+    name: "RMS current phase b"
+    id: rms_current_phase_b
+    device_class: current
+    unit_of_measurement: A    
+    state_class: measurement 
+    accuracy_decimals: 3 
+    update_interval: never
+  - platform: template    
+    name: "RMS active power phase b"
+    id: rms_active_power_phase_b
+    device_class: power
+    unit_of_measurement: kW  
+    state_class: measurement  
+    accuracy_decimals: 4 
+    update_interval: never
+  - platform: template    
+    name: "RMS reactive power phase b"
+    id: rms_reactive_power_phase_b
+    device_class: reactive_power
+    unit_of_measurement: kvar
+    state_class: measurement  
+    accuracy_decimals: 4
+    update_interval: never
+  - platform: template    
+    name: "RMS power factor phase b"
+    id: rms_power_factor_phase_b
+    device_class: power_factor
+    unit_of_measurement: "%"
+    state_class: measurement 
+    accuracy_decimals: 3 
+    update_interval: never   
+    
+  - platform: template   
+    name: "RMS voltage phase c"
+    id: rms_voltage_phase_c
+    device_class: voltage
+    unit_of_measurement: V
+    state_class: measurement 
+    accuracy_decimals: 1 
+    update_interval: never
+  - platform: template    
+    name: "RMS current phase c"
+    id: rms_current_phase_c
+    device_class: current
+    unit_of_measurement: A    
+    state_class: measurement 
+    accuracy_decimals: 3 
+    update_interval: never
+  - platform: template    
+    name: "RMS active power phase c"
+    id: rms_active_power_phase_c
+    device_class: power
+    unit_of_measurement: kW  
+    state_class: measurement  
+    accuracy_decimals: 4 
+    update_interval: never
+  - platform: template    
+    name: "RMS reactive power phase c"
+    id: rms_reactive_power_phase_c
+    device_class: reactive_power
+    unit_of_measurement: kvar
+    state_class: measurement  
+    accuracy_decimals: 4
+    update_interval: never
+  - platform: template    
+    name: "RMS power factor phase c"
+    id: rms_power_factor_phase_c
+    device_class: power_factor
+    unit_of_measurement: "%"
+    state_class: measurement 
+    accuracy_decimals: 3 
+    update_interval: never      
+ 
+  - platform: template
+    name: "RMS active power group"
+    id: rms_active_power_g
+    device_class: power
+    unit_of_measurement: kW  
+    state_class: measurement 
+    accuracy_decimals: 4
+    update_interval: never
+  - platform: template    
+    name: "RMS reactive power group"
+    id: rms_reactive_power_g
+    device_class: reactive_power
+    unit_of_measurement: kvar
+    state_class: measurement 
+    accuracy_decimals: 4 
+    update_interval: never
+  - platform: template      
+    name: "RMS power factor group"
+    id: rms_power_factor_g
+    device_class: power_factor
+    unit_of_measurement: "%"
+    state_class: measurement 
+    accuracy_decimals: 3
+    update_interval: never
+  
+  - platform: template    
+    name: "Total active energy"
+    id: total_active_energy
+    device_class: energy
+    unit_of_measurement: kWh
+    state_class: total
+    icon: mdi:home-lightning-bolt
+    accuracy_decimals: 2    
+    update_interval: never
+  - platform: template    
+    name: "Total active power"
+    id: total_active_power
+    device_class: power
+    unit_of_measurement: kW  
+    state_class: measurement
+    accuracy_decimals: 4      
+    update_interval: never
+
+  - platform: template  
+    name: "${device_verbose_name}_h"
+    id: data_time_hour
+    icon: mdi:clock-time-three
+    unit_of_measurement: h
+    accuracy_decimals: 0 
+    update_interval: never
+  - platform: template  
+    name: "${device_verbose_name}_m"
+    id: data_time_minute
+    icon: mdi:clock-time-three
+    unit_of_measurement: m
+    accuracy_decimals: 0
+    update_interval: never
+  
+  - platform: template
+    name: "Purchase value"
+    id: prepayment_purchase_value
+    icon:  mdi:currency-usd
+    accuracy_decimals: 2
+    update_interval: 600s
+  - platform: template  
+    name: "Setting balance kWh"
+    id: prepayment_purchases_setting_balance_kWh
+    icon: mdi:transmission-tower-import
+    unit_of_measurement: kWv
+    accuracy_decimals: 2
+    update_interval: never
+      
+  - platform: wifi_signal
+    name: "${device_verbose_name}_wifi_signal"  
+
+  - platform: uptime
+    name: "${device_verbose_name}_uptime"
+    
+  - platform: adc
+    pin: VCC
+    name: "${device_verbose_name}_voltage_ESP"      
+  
+  text_sensor:
+  - platform: template
+    name: "${device_verbose_name}_w"
+    id: data_time_week
+    icon: mdi:calendar-month-outline
+    update_interval: never
+  - platform: template
+    name: "${device_verbose_name}_timing_onoff"
+    id: data_time_onoff 
+    icon: mdi:power
+    update_interval: never
+  - platform: version
+    name: "${device_verbose_name}_version"      
+
+  select:
+  - platform: template
+    name: "Day of week"
+    icon: mdi:calendar-month-outline
+    id: day_week
+    options:
+      - "Mo"
+      - "Tu"
+      - "We"
+      - "Th"
+      - "Fr"
+      - "Sa"
+      - "Su"
+    optimistic: true 
+    on_value:
+      then:
+        - lambda: |-
+            if (!reception.has_value()) {
+              sending.length_frame = 0x16;  
+              sending.valueapi = true;
+              sending_switch = sending;
+              id(sm_metr_save_timing).publish_state(true);
+              last_lock =  millis();
+            }     
+    update_interval: never    
+    
+  number:
+  - platform: template
+    name: "Data time h"
+    icon: mdi:clock-time-three
+    id: day_time_h
+    optimistic: true
+    on_value:
+      then:
+        - lambda: |-
+            if (!reception.has_value()) {
+              sending.length_frame = 0x16;  
+              sending.valueapi = true;
+              sending_switch = sending;
+              id(sm_metr_save_timing).publish_state(true);
+              last_lock =  millis();
+            }      
+    min_value: 0
+    max_value: 23
+    step: 1 
+    mode: box    
+  - platform: template
+    name: "Data time m"
+    icon: mdi:clock-time-three
+    id: day_time_m
+    optimistic: true
+    on_value:
+      then:
+        - lambda: |-
+            if (!reception.has_value()) {
+              sending.length_frame = 0x16;  
+              sending.valueapi = true;
+              sending_switch = sending;
+              id(sm_metr_save_timing).publish_state(true);
+              last_lock =  millis();
+            }      
+    min_value: 0
+    max_value: 59
+    step: 1
+    mode: box
+  - platform: template
+    name: "Day of week"
+    icon: mdi:calendar-month-outline
+    optimistic: true
+    min_value: 0
+    max_value: 7 
+    step: 1
+    mode: box
+  
+  - platform: template
+    name: "Voltage high limit input"
+    icon: mdi:sine-wave
+    id: voltage_high_limit
+    optimistic: true
+    on_value:
+      then:
+        - lambda: |-
+            if (!reception.has_value()) {
+              if (!id(sm_metr_setting).state) {
+                sending.length_frame = 0x06;  
+                sending.valueapi = 0x01;
+                sending_switch = sending;
+              } else { 
+                id(sm_metr_save_protec_price_energy_initial).turn_on();
+              }
+            }         
+    min_value: 240
+    max_value: 275
+    step: 1
+    mode: box  
+  - platform: template
+    name: "Voltage low limit input"
+    icon: mdi:sine-wave
+    id: voltage_low_limit
+    optimistic: true
+    on_value:
+      then:
+        - lambda: |-
+            if (!reception.has_value()) {
+              if (!id(sm_metr_setting).state) {
+                sending.length_frame = 0x06;  
+                sending.valueapi = 0x01;
+                sending_switch = sending;
+              } else { 
+                id(sm_metr_save_protec_price_energy_initial).turn_on();
+              }
+            }     
+    min_value: 175
+    max_value: 200
+    step: 1
+    mode: box
+  - platform: template
+    name: "Current high limit input"
+    icon: mdi:current-ac
+    id: current_high_limit
+    optimistic: true
+    on_value:
+      then:
+        - lambda: |-
+            if (!reception.has_value()) {
+              if (!id(sm_metr_setting).state) {
+                sending.length_frame = 0x06;  
+                sending.valueapi = 0x01;
+                sending_switch = sending;
+              } else { 
+                id(sm_metr_save_protec_price_energy_initial).turn_on();
+              }
+            } 
+    min_value: 10
+    max_value: 100.00
+    step: .01 
+    mode: box
+  - platform: template
+    name: "Starting kWh value"
+    icon: mdi:transmission-tower-import
+    id: starting_kWh_value_of_metr
+    optimistic: true
+    on_value:
+      then:
+        - lambda: |-
+            if (!reception.has_value()) {
+              if (!id(sm_metr_setting).state) {
+                sending.length_frame = 0x06;  
+                sending.valueapi = 0x01;
+                sending_switch = sending;
+              } else { 
+                id(sm_metr_save_protec_price_energy_initial).turn_on();
+              }
+            }    
+    min_value: 0
+    max_value: 999999.99
+    step: 0.01
+    mode: box
+  - platform: template
+    name: "Metr price"
+    icon: mdi:currency-usd
+    id: metr_price
+    optimistic: true
+    on_value:
+      then:
+        - lambda: |-
+            if (!reception.has_value()) {
+              if (!id(sm_metr_setting).state) {
+                sending.length_frame = 0x06;  
+                sending.valueapi = 0x01;
+                sending_switch = sending;
+              } else { 
+                id(sm_metr_save_protec_price_energy_initial).turn_on();
+              }
+            }     
+    min_value: 0
+    max_value: 5
+    step: 0.01
+    mode: box
+    
+  - platform: template
+    name: "Purchase kWh"
+    icon: mdi:transmission-tower-import
+    id: prepayment_purchase_kWh
+    optimistic: true
+    on_value:
+      then:
+        - lambda: |-
+            if (!reception.has_value()) {
+              if (!id(sm_metr_setting).state) {
+                sending.length_frame = 0x06;  
+                sending.valueapi = 0x01;
+                sending_switch = sending;
+              } else { 
+                id(sm_metr_save_prepayment).turn_on();
+              }
+            }    
+    min_value: 0
+    max_value: 999999.99
+    step: 0.01
+  - platform: template
+    name: "Setting balance alarm kWh"
+    icon: mdi:transmission-tower-off
+    id: prepayment_purchases_setting_balance_alarm_kWh
+    optimistic: true
+    on_value:
+      then:
+        - lambda: |-
+            if (!reception.has_value()) {
+              if (!id(sm_metr_setting).state) {
+                sending.length_frame = 0x06;  
+                sending.valueapi = 0x01;
+                sending_switch = sending;
+              } else { 
+                id(sm_metr_save_prepayment).turn_on();
+              }
+            }     
+    min_value: 0
+    max_value: 999999.99
+    step: 0.01
+    mode: box
+  
+  custom_component:
+      id: sm_metr
+      lambda: |-
+        auto my_custom = new SMComponent(id(uart_bus));
+        return {my_custom}; 
