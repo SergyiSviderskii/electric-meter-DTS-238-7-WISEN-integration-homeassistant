@@ -738,7 +738,7 @@ class SMComponent : public Component, public UARTDevice {
     void send_local_time_() {
       std::vector<uint8_t> payload;
       auto *time_id = *this->time_id_;
-      esphome::ESPTime now = time_id->now();
+      ESPTime now = time_id->now();
       if (now.is_valid()) {
         uint8_t year = now.year - 2000;
         uint8_t month = now.month;
